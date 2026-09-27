@@ -1,0 +1,1 @@
+"""Diagnostic booking service package."""
