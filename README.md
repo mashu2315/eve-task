@@ -1,48 +1,40 @@
 # Diagnostic Booking Service
 
-A small FastAPI backend for booking diagnostic tests and simulating payments. It includes user authentication, diagnostic centre/test management, bookings, simulated payments, and idempotent payment webhooks.
+A small FastAPI backend for booking diagnostic tests and simulating payments. It includes user authentication, diagnostic centre/test management, bookings, simulated payments, idempotent payment webhooks, rate limiting, and pagination.
 
 ## Features
 
 - User signup and login with JWT authentication
-- Diagnostic centre and test management APIs
+- Diagnostic centre and test management APIs with pagination
 - Booking creation and retrieval for authenticated users
 - Simulated payment processing with status updates
 - Idempotent payment webhook handling
 - Basic validation and authorization checks
+- Rate limiting to protect endpoints
 
 ## Tech Stack
 
 - FastAPI
-- SQLAlchemy + SQLite by default (PostgreSQL-ready)
+- SQLAlchemy + PostgreSQL
 - JWT authentication
 - Pydantic validation
 - pytest for API tests
+- slowapi for Rate Limiting
+- Docker & Docker Compose
 
-## Local Setup
+## Local Setup with Docker (Recommended)
 
-1. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Copy environment example and update values if needed:
+1. Copy the environment example and update values if needed:
    ```bash
    cp .env.example .env
    ```
 
-4. Run the app:
+2. Start the application and database using Docker Compose:
    ```bash
-   uvicorn app.main:app --reload
+   docker-compose up --build
    ```
 
-5. Open Swagger UI:
+3. Open Swagger UI:
    - http://127.0.0.1:8000/docs
 
 ## API Endpoints
@@ -77,74 +69,26 @@ A small FastAPI backend for booking diagnostic tests and simulating payments. It
 ### Diagnostic Centres
 
 - POST /centres/
-- GET /centres/
+- GET /centres/  *(supports `?skip=0&limit=100` pagination)*
 - GET /centres/{centre_id}
-
-Example:
-```bash
-curl -X POST http://127.0.0.1:8000/centres/ \
-  -H "Content-Type: application/json" \
-  -d '{"name":"City Lab","location":"Downtown","phone":"123456"}'
-```
 
 ### Diagnostic Tests
 
 - POST /centres/{centre_id}/tests/
-- GET /tests/
+- GET /tests/ *(supports `?skip=0&limit=100` pagination)*
 - GET /tests/{test_id}
-
-Example:
-```bash
-curl -X POST http://127.0.0.1:8000/centres/1/tests/ \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Blood Test","description":"Routine blood analysis","price":120.0}'
-```
 
 ### Bookings
 
 - POST /bookings/
-- GET /bookings/
+- GET /bookings/ *(supports `?skip=0&limit=100` pagination)*
 - GET /bookings/{booking_id}
 - PATCH /bookings/{booking_id}/cancel
-
-Example:
-```bash
-curl -X POST http://127.0.0.1:8000/bookings/ \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "test_id": 1,
-    "centre_id": 1,
-    "appointment_datetime": "2026-10-02T10:30:00"
-  }'
-```
 
 ### Payments
 
 - POST /payments/
 - POST /payments/webhook/
-
-Example payment:
-```bash
-curl -X POST http://127.0.0.1:8000/payments/ \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"booking_id": 1, "amount": 120.0, "provider": "mock-provider"}'
-```
-
-Example webhook:
-```bash
-curl -X POST http://127.0.0.1:8000/payments/webhook/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event_id": "evt_001",
-    "event_type": "payment.success",
-    "booking_id": 1,
-    "status": "SUCCESS",
-    "external_reference": "ref_001",
-    "provider": "mock-provider"
-  }'
-```
 
 ## Database / Schema Design
 
@@ -164,34 +108,21 @@ Relationships:
 - One booking has at most one payment.
 - Webhooks are deduplicated by `event_id`.
 
-## Important Assumptions
+## Rate Limiting
 
-- SQLite is used by default for local development simplicity; PostgreSQL can be swapped in by changing `DATABASE_URL`.
-- The mock payment endpoint randomly returns `SUCCESS` or `FAILED` for simulation purposes.
-- Webhook processing is deduplicated by `event_id` to guarantee idempotency.
-- Only the booking owner can view or cancel their bookings.
-
-## Edge Cases Covered
-
-- Invalid or missing booking IDs
-- Unauthorized access to another user's booking
-- Repeated webhook events
-- Payment amount mismatch
-- Repayment of failed payments
-- Invalid or expired JWT
-- Booking date in the past
+This project uses `slowapi` to restrict the number of requests clients can make to the endpoints. For example, login and signup are limited to `10/minute` and `5/minute` respectively. Check `app/main.py` for endpoint-specific limits.
 
 ## If I Had More Time
 
-- Add PostgreSQL and Docker Compose setup with real database service
 - Add Redis caching for centre/test reads
 - Add Celery workers for async payment or webhook processing
-- Implement pagination and rate limiting
 - Add unit/integration tests for negative cases and authorization rules
 - Improve logging and monitoring
 - Add retry handling and dead-letter queue patterns for webhook retries
 
 ## Running Tests
+
+To run tests, you can execute them directly (ensure your environment or container has `pytest`):
 
 ```bash
 pytest -q

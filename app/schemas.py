@@ -118,3 +118,13 @@ class PaymentWebhookResponse(BaseModel):
     message: str
     processed: bool
     idempotent: bool = False
+
+from typing import Generic, TypeVar
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    page: int
+    size: int
+    total_pages: int
+    total_items: int
