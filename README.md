@@ -69,19 +69,19 @@ A small FastAPI backend for booking diagnostic tests and simulating payments. It
 ### Diagnostic Centres
 
 - POST /centres/
-- GET /centres/  *(supports `?skip=0&limit=100` pagination)*
+- GET /centres/  *(supports `?page=1&size=10` pagination)*
 - GET /centres/{centre_id}
 
 ### Diagnostic Tests
 
 - POST /centres/{centre_id}/tests/
-- GET /tests/ *(supports `?skip=0&limit=100` pagination)*
+- GET /tests/ *(supports `?page=1&size=10` pagination)*
 - GET /tests/{test_id}
 
 ### Bookings
 
 - POST /bookings/
-- GET /bookings/ *(supports `?skip=0&limit=100` pagination)*
+- GET /bookings/ *(supports `?page=1&size=10` pagination)*
 - GET /bookings/{booking_id}
 - PATCH /bookings/{booking_id}/cancel
 
@@ -107,6 +107,21 @@ Relationships:
 - One test belongs to one centre but may appear in many bookings.
 - One booking has at most one payment.
 - Webhooks are deduplicated by `event_id`.
+
+## Pagination
+
+List endpoints (like GET centres, tests, and bookings) now return a paginated response using `page` and `size` parameters. 
+
+Example response:
+```json
+{
+  "items": [...],
+  "page": 1,
+  "size": 10,
+  "total_pages": 5,
+  "total_items": 50
+}
+```
 
 ## Rate Limiting
 
