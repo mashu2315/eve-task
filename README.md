@@ -81,18 +81,39 @@ This project follows a clean, modular structure standard for FastAPI application
 ### Diagnostic Centres
 
 - POST /centres/
+  ```json
+  {
+    "name": "City Lab",
+    "location": "Downtown",
+    "phone": "123456"
+  }
+  ```
 - GET /centres/  *(supports `?page=1&size=10` pagination)*
 - GET /centres/{centre_id}
 
 ### Diagnostic Tests
 
 - POST /centres/{centre_id}/tests/
+  ```json
+  {
+    "name": "Blood Test",
+    "description": "Routine blood analysis",
+    "price": 120.0
+  }
+  ```
 - GET /tests/ *(supports `?page=1&size=10` pagination)*
 - GET /tests/{test_id}
 
 ### Bookings
 
 - POST /bookings/
+  ```json
+  {
+    "test_id": 1,
+    "centre_id": 1,
+    "appointment_datetime": "2026-10-02T10:30:00Z"
+  }
+  ```
 - GET /bookings/ *(supports `?page=1&size=10` pagination)*
 - GET /bookings/{booking_id}
 - PATCH /bookings/{booking_id}/cancel
@@ -100,7 +121,24 @@ This project follows a clean, modular structure standard for FastAPI application
 ### Payments
 
 - POST /payments/
+  ```json
+  {
+    "booking_id": 1,
+    "amount": 120.0,
+    "provider": "mock-provider"
+  }
+  ```
 - POST /payments/webhook/
+  ```json
+  {
+    "event_id": "evt_001",
+    "event_type": "payment.success",
+    "booking_id": 1,
+    "status": "SUCCESS",
+    "external_reference": "ref_001",
+    "provider": "mock-provider"
+  }
+  ```
 
 ## Database / Schema Design
 
