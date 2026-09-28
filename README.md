@@ -11,6 +11,18 @@ A small FastAPI backend for booking diagnostic tests and simulating payments. It
 - Idempotent payment webhook handling
 - Basic validation and authorization checks
 - Rate limiting to protect endpoints
+- Redis caching for list endpoints (`fastapi-cache2`)
+- Structured logging with `loguru`
+- Retry handling for database transactions in webhooks using `tenacity`
+
+
+## Architecture & Refactoring
+
+This project follows a clean, modular structure standard for FastAPI applications:
+- **`app/main.py`**: The application entry point (initializes app, loads cache/limiters, attaches exception handlers, and mounts routers).
+- **`app/routers/`**: Contains the business logic split by domain (`auth.py`, `diagnostics.py`, `bookings.py`, `payments.py`).
+- **`app/exceptions.py`**: Defines custom exception classes (e.g., `DiagnosticAppException`) and global handlers to ensure graceful, user-friendly JSON error responses that often include actionable resolutions.
+- **`app/schemas.py` & `app/models.py`**: Pydantic schemas and SQLAlchemy DB models.
 
 ## Tech Stack
 
@@ -123,17 +135,25 @@ Example response:
 }
 ```
 
+
+## Advanced Features Added
+
+### Redis Caching
+List endpoints (`/centres/` and `/tests/`) use `fastapi-cache2` to cache results for 60 seconds, drastically reducing database load for frequent queries. The app automatically falls back to an in-memory cache if Redis is unavailable.
+
+### Structured Logging
+We use `loguru` configured to emit JSON-formatted structured logs. This is highly beneficial for downstream log aggregators (like ELK, Datadog) to parse events easily.
+
+### Retry Handling
+Webhook processing utilizes `tenacity` (`@retry`) to automatically retry on database transaction failures with exponential backoff (up to 3 attempts).
+
 ## Rate Limiting
 
 This project uses `slowapi` to restrict the number of requests clients can make to the endpoints. For example, login and signup are limited to `10/minute` and `5/minute` respectively. Check `app/main.py` for endpoint-specific limits.
 
 ## If I Had More Time
 
-- Add Redis caching for centre/test reads
 - Add Celery workers for async payment or webhook processing
-- Add unit/integration tests for negative cases and authorization rules
-- Improve logging and monitoring
-- Add retry handling and dead-letter queue patterns for webhook retries
 
 ## Running Tests
 
